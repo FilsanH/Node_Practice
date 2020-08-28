@@ -38,10 +38,21 @@ MongoClient.connect(connectionString, { useUnifiedTopology: true }).then(
     const quotesCollection = _db.collection('quotes')
 
     //All routes
+
     app.get('/', (req, res) => {
+      //returns object that contains all quotes from database
+      const cursor = _db
+        .collection('quotes')
+        .find()
+        .toArray()
+        .then((results) => {
+          console.log(results)
+        })
+        .catch((error) => console.error(error))
       res.sendFile(__dirname + '/index.html')
     })
 
+    // create post
     app.post('/quotes', (req, res) => {
       // add quote to quotes colection
       quotesCollection
@@ -52,6 +63,8 @@ MongoClient.connect(connectionString, { useUnifiedTopology: true }).then(
         })
         .catch((err) => console.log(err))
     })
+
+    //get qoutes from the database
 
     app.listen(3000, () => {
       console.log('listenting on 3000')
