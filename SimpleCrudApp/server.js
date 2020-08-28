@@ -2,9 +2,14 @@ const express = require('express')
 const bodyParser = require('body-parser')
 const app = express()
 
+app.set('views engine', 'ejs') // place before any app.use, app.get/post
 //Place bodyParser before CRUD
 // this converts the data in the form element to something that is readable and adds it to the req.body
 app.use(bodyParser.urlencoded({ extended: true }))
+app.use(bodyParser.json()) //handle json format and put in body
+
+// make public folder accessible to public
+app.use(express.static('public'))
 
 const mongodb = require('mongodb')
 const MongoClient = mongodb.MongoClient
@@ -37,8 +42,9 @@ MongoClient.connect(connectionString, { useUnifiedTopology: true }).then(
     // create a collection
     const quotesCollection = _db.collection('quotes')
 
-    //All routes
+    //All routes:
 
+    //get qoutes from the database
     app.get('/', (req, res) => {
       //returns object that contains all quotes from database
       const cursor = _db
@@ -47,9 +53,9 @@ MongoClient.connect(connectionString, { useUnifiedTopology: true }).then(
         .toArray()
         .then((results) => {
           console.log(results)
+          res.render('index.ejs', { quotes: results })
         })
         .catch((error) => console.error(error))
-      res.sendFile(__dirname + '/index.html')
     })
 
     // create post
@@ -64,7 +70,29 @@ MongoClient.connect(connectionString, { useUnifiedTopology: true }).then(
         .catch((err) => console.log(err))
     })
 
-    //get qoutes from the database
+    //PUT
+    app.put('/quotes', (req, res) => {
+      console.log(req.body)
+      quotesCollection
+        .findOneAndUpdate(
+          { name: 'Yoda' },
+          {
+            $set: {
+              name: req.body.name,
+              quote: req.body.quote,
+            },
+          },
+          {
+            upsert: true, // if doesn't exists insert this
+          }
+        )
+        .then((result) => {
+          console.log(result)
+          res.json('Success')
+          //can not redirect here so instead reload page in javascript
+        })
+        .catch((error) => console.error(error))
+    })
 
     app.listen(3000, () => {
       console.log('listenting on 3000')
